@@ -1,0 +1,96 @@
+der code funktioniert soweit, wie er im hilfetext von gtag.py beschrieben ist.
+dort steht auch, was als nächstes gemacht werden muss.
+
+
+* Todos
+** TODO tagspec
+Beispiel: "Music | (!Photo & Jara)"
+soweit ich weiß gab es da eine normalform:
+- die ! sind in den leafs
+** TODO gtag.py -e funktioniert nicht
+** TODO git repo einrichten
+** DONE convert to python3
+   CLOSED: [2018-03-04 So 08:38]
+
+* benutzung
+
+** Entwicklungsplan
+*** TODO gtag api beschreiben
+*** TODO tag-spec-syntax implementieren in gtagd.py und list befehl ersetzen (überarbeiten)
+*** TODO mount-editor auf grundlage der gtag api entwickeln
+*** TODO thunar extensions entwickeln
+** ideen: schreibe thunar, gthumb, oder nautilus context menu einträge
+
+** workflow
+   1. taggen einer datei
+   2. suchen nach dateien mit einem bestimmen tag
+
+** common tasks:
+*** fast flag a file (move to selection, add tag)
+    context menu with list of all tags (may be giant, so restrict to tags with certain tag 'add-menu-list')
+*** fast remove a tag
+    context menu with list of tags of file
+*** see other tags, attached to the files shown, and apply it to filter (as intersection or difference)
+    context menu
+*** see tags of a certain file
+    file properties tab
+*** fast remove a tag from the intersection or union filter
+    not that easy
+    mount editor?
+*** unite with a tag or mount
+    mount editor?
+    context menu with list of tags (may be giant, see remark on 'fast flag a file')
+*** clone the mount (intersection/union filter)
+    context menu
+*** create a new filter from scratch (showing number of files)
+    mount editor
+*** undo last filter modifying operation (like apply new tag as intersection or union or remove a tag)
+    context menu
+
+
+** idee: spezielles verzeichnis, welches auf neue dateien überwacht wird.
+
+** suchen nach dateien (browsen), mount-editor
+*** funktion
+    liste mit tags:
+    mehrere selektieren ("oder"-verknüpfung)
+    erzeugt "unterverzeichnis": liste mit allen tags, die alle dateien außerdem besitzen, die die in der ersten ebene selektiert tags besitzen
+    auswählen erzeugt sozusagen eine auswahl der auswahl ("und"-verknüpfung)
+    auswahl invertieren -> erzeugt ("nicht"-präfix)
+*** gui entwurf
+    tag-auswahl: ähnlich wie iExplorer (mit immer weiter sich öffnenden listen)
+    datei vorschau liste (mount)
+*** realisierung
+    eventuell bei der dropbox-extension für thunar spicken
+    das mit thunar machen ist ne schlechte idee, ist in gtk und c geschrieben und müsste complett umgebaut werden. 
+    vllt doch eher ne python app mit wx oder qt
+    oder mount-editor separat wie beschrieben und rest als thunar extension mit menu einträgen
+*** mount editor in thunar adresszeile
+    gutentag://<tags-spec>
+*** mount editor in thunar dir properties als extension
+
+
+* wie funktioniert so ein mount?
+*** 
+** ideen
+*** verzeichnis mit softlinks auf dateien
+    - hdd zugriff eventuell langsam und unnötig
+*** verzeichnis mit hardlinks auf dateien
+    - überträgt dateirechte!!
+    - hdd zugriff
+*** mittels fuse
+    - kein hdd zugriff, weil mount nur virtuell existiert
+** was tun wenn dateien angelegt werden
+*** zum taggen vorschlagen und irgendwo hin kopieren
+*** backup dateien und automatisch generierte hilfsdateien und -verzeichnisse (ardour project)
+** alle änderungen überwachen
+   - zum beispiel dateirechte!!!
+
+* verallgemeinerungen
+** von files auf einträge aller art
+   spezielle system tag definieren, wie mit dem eintrag umgegangen werden soll, z.B.
+   - file
+   - command
+   - url
+   - edit eintrag (simpleste form)
+
