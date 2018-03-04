@@ -59,7 +59,7 @@ class GutenTagDaemon:
         except:
             raise
 
-    def tag(self, files, tags, extags):
+    def add(self, files, tags):
         """
         files: list of files
         tags: list of tags
@@ -88,7 +88,7 @@ class GutenTagDaemon:
 
         return True
 
-    def untag(self, files, tags, extags):
+    def remove(self, files, tags):
         """
         files: list of files
         tags: list of tags
@@ -113,51 +113,18 @@ class GutenTagDaemon:
 
         return True
 
-    def list(self, files, tags, extags):
-        print("list %i files with %i tags" % (len(files), len(tags)))
-        try:
-            checkfiles(files)
-            ret = None
-            if files:
-                tags = set()
-                for f in files:
-                    if f in self._files:
-                        tags.update(self._files[f])
+    def tags(self, filename):
+        tags = []
+        if filename == "":
+            tags = list(self._tags.keys())
 
-                ret = list(tags)
+        elif filename in self._files:
+            tags = self._files[filename]
 
-            else:
-                files = set()
-                init = True
-                for t in tags:
-                    if t in self._tags:
-                        if init:
-                            files = self._tags[t]
-                            init = False
-                        else:
-                            files.difference_update(self._tags[t])
+        return tags
 
-                ret = list(files)
-
-        except:
-            traceback.print_exc()
-            raise
-
-        return ret
-
-
-    def listFiles(self, tag_spec):
-        """
-        tag_spec is a string, eg "Music | (Photo & Jara)"
-        """
-        tagtree = specToTree(tag_spec)
-        # the way to do this:
-        # idea 1: step recursive through tree and throw away files
-        pass
-        # go on here
-
-    def listTags(self, file_spec):
-        pass
+    def files(self, tagterm):
+        raise Exception("Not implemented")
 
     def mount(self, tag_spec, mount_name):
         pass
@@ -171,10 +138,8 @@ class GutenTagDaemon:
     def getMountSpec(self, mount_name):
         pass
 
-    def stop(self):
-        print("Bye")
-        # self._server.shutdown_request()
-        # TODO find a way to stop the server
+    def pid(self):
+        return os.getpid()
 
 def main():
     from xmlrpc.server import SimpleXMLRPCServer
