@@ -4,11 +4,14 @@ dort steht auch, was als nächstes gemacht werden muss.
 
 * Todos
 ** TODO tagspec
-Beispiel: "Music | (!Photo & Jara)"
-soweit ich weiß gab es da eine normalform:
-- die ! sind in den leafs
+- Beispiel: "Music | (!Photo & Jara)"
+- soweit ich weiß gab es da eine normalform:
+  - die ! sind in den leafs
+  - die | liegen höher als die &
+  - in Protector/FeatureTree.py ist das mit den klassen Tree und Node implementiert 
 ** TODO gtag.py -e funktioniert nicht
-** TODO git repo einrichten
+** DONE git repo einrichten
+   CLOSED: [2018-03-04 So 08:59]
 ** DONE convert to python3
    CLOSED: [2018-03-04 So 08:38]
 

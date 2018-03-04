@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import unittest
 
 class Node:
@@ -19,13 +20,11 @@ class Node:
     def __str__(self):
         ans = ""
         if self.Not:
-            ans = ans + "!"
-        ans = ans + "("
+            ans = "!"
         if ( self.LeafOp == self.LEAF ):
-            ans = ans + str(self.key)
+            ans += str(self.key)
         else:
-            ans = ans + str(self.leftChild) + " " + str(self.key) + " " + str(self.rightChild)
-        ans = ans + ")"
+            ans += "({} {} {})".format(self.leftChild, self.key, self.rightChild)
         return ans
 
     def addNot(self):
@@ -105,22 +104,13 @@ class Node:
         else:
             return False
 
-#    def fusionateKeyNot(self):
-#        """appends a '!' to each feature which is in a not-leaf"""
-#        if self.LeafOp == self.LEAF:
-#            if self.Not:
-#                self.key = "!" + self.key
-#            return
-#        self.leftChild.fusionateKeyNot()
-#        self.rightChild.fusionateKeyNot()
-
 class Tree:
     """Defines a tree representing the feature list."""
     verbose = False
 
     def __init__(self):
         self.hasFreeAtom = False
-        self.actAtom = 0
+        self.atom = 0
         self.NodeStack = []
         self.OpStack = []
 
@@ -131,8 +121,7 @@ class Tree:
 
     def clear(self):
         """Deletes the tree"""
-        self.hasFreeAtom = False
-        self.actAtom = 0
+        self.atom = None
         self.NodeStack = []
         self.OpStack = []
 
@@ -160,10 +149,10 @@ class Tree:
         """
         if self.verbose:
             print("new Node")
-        if self.hasFreeAtom:
-            newNode = Node(self.actAtom, Node.LEAF)
+        if self.atom:
+            newNode = Node(self.atom, Node.LEAF)
             self.NodeStack.append(newNode)
-            self.hasFreeAtom = False
+            self.atom = None
         elif ( len(self.OpStack) > 0 and len(self.NodeStack) > 1):
             newNode = Node(self.OpStack.pop(),Node.OPERATOR)
             newNode.rightChild = self.NodeStack.pop()
@@ -173,45 +162,53 @@ class Tree:
             raise Exception("no atom present and either no op or no two nodes on stack to create new node")
 
     def addAtom(self, content):
-        """Sets actAtom to a single atom."""
-        self.actAtom = content
+        """Sets atom to a single atom."""
+        self.atom = content
         if self.verbose:
-            print("add Atom: {}".format(self.actAtom))
-        self.hasFreeAtom = True
+            print("add Atom: {}".format(self.atom))
 
-    def lowerNot(self):
+    def _lowerNot(self):
         """Lowers all Not Signs in the tree down to the leafs."""
         if self.NodeStack != []:
             self.NodeStack[0].lowerNot()
 
-    def liftOr(self):
+    def _liftOr(self):
         """Lifts all Or-Operators in the tree as highest as possible."""
         if self.NodeStack != []:
             while ( self.NodeStack[0].liftOr() ):
                 pass
 
-    def liftOrlowerNot(self):
-        self.lowerNot()
-        self.liftOr()
+    def normalize(self):
+        self._lowerNot()
+        self._liftOr()
 
 class TagSpecTest(unittest.TestCase):
-    def test_addsomenodesandops(self):
+    def setUp(self):
         """
-        Create a Tree and put this one on: "Music | (!Photo & Jara)"
-        """ 
-        tree = Tree()
-        tree.addAtom("Music")
-        tree.addNode()
-        tree.addAtom("Photo")
-        tree.addNode()
-        tree.addNot()
-        tree.addAtom("Jara")
-        tree.addNode()
-        tree.addOp("&")
-        tree.addNode()
-        tree.addOp("|")
-        tree.addNode()
-        self.assertEqual(str(tree), "((Music) | (!(Photo) & (Jara)))")
+        Create a highly unnormalized tree, normalize and compare output. Lets use:
+        "! ( !( Music | Photo ) | Jara )"
+        """
+        self.tree = Tree()
+        self.tree.addAtom("Music")
+        self.tree.addNode()
+        self.tree.addAtom("Photo")
+        self.tree.addNode()
+        self.tree.addOp("|")
+        self.tree.addNode()
+        self.tree.addNot()
+        self.tree.addAtom("Jara")
+        self.tree.addNode()
+        self.tree.addOp("|")
+        self.tree.addNode()
+        self.tree.addNot()
 
-if __name__ == "__main__":
-    example()
+    def test_output(self):
+        """
+        Just check the output
+        """
+        self.assertEqual(str(self.tree), "!(!(Music | Photo) | Jara)")
+
+    def test_normalize(self):
+        self.tree.normalize()
+        self.assertEqual(str(self.tree), "((Music & !Jara) | (Photo & !Jara))")
+
