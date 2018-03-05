@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
+import operator
 import unittest
+
+LEAF = 0
+OPERATOR = 1
 
 class Node:
     """
@@ -7,12 +11,10 @@ class Node:
     It can be a LEAF or an OPERATOR. In the last case is has got
     two children.
     """
-    LEAF = 0
-    OPERATOR = 1
 
-    def __init__(self, sams, stat):
-        self.key = sams
-        self.LeafOp = stat
+    def __init__(self, key, leafop):
+        self.key = key
+        self.LeafOp = leafop
         self.Not = False
         self.leftChild = 0
         self.rightChild = 0
@@ -21,18 +23,30 @@ class Node:
         ans = ""
         if self.Not:
             ans = "!"
-        if ( self.LeafOp == self.LEAF ):
+        if ( self.LeafOp == LEAF ):
             ans += str(self.key)
         else:
             ans += "({} {} {})".format(self.leftChild, self.key, self.rightChild)
         return ans
+
+    def eval(self, keys):
+        ans = True
+        if self.LeafOp == LEAF:
+            ans = self.key in keys
+        else:
+            if self.LeafOp == "&":
+                ans = self.rightChild.eval(keys) and self.leftChild.eval(keys)
+            elif self.LeafOp == "|":
+                ans = self.rightChild.eval(keys) or self.leftChild.eval(keys)
+
+        return operator.xor(ans, self.Not)
 
     def addNot(self):
         self.Not = not self.Not
 
     def lowerNot(self):
         """Lowers all Not Signs in the subtree down to the leafs."""
-        if self.LeafOp == self.LEAF:
+        if self.LeafOp == LEAF:
             return
         if self.Not == True:
             self.Not = False
@@ -53,11 +67,11 @@ class Node:
                 self.key = "|"
                 leftNode = self.leftChild
                 rightNode = self.rightChild
-                self.leftChild = Node("&", self.OPERATOR)
+                self.leftChild = Node("&", OPERATOR)
                 self.leftChild.leftChild = leftNode.leftChild
                 self.leftChild.rightChild = rightNode
 
-                self.rightChild = Node("&", self.OPERATOR)
+                self.rightChild = Node("&", OPERATOR)
                 self.rightChild.rightChild = rightNode
                 self.rightChild.leftChild = leftNode.rightChild
                 return True
@@ -65,11 +79,11 @@ class Node:
                 self.key = "|"
                 leftNode = self.leftChild
                 rightNode = self.rightChild
-                self.leftChild = Node("&", self.OPERATOR)
+                self.leftChild = Node("&", OPERATOR)
                 self.leftChild.leftChild = leftNode
                 self.leftChild.rightChild = rightNode.leftChild
 
-                self.rightChild = Node("&", self.OPERATOR)
+                self.rightChild = Node("&", OPERATOR)
                 self.rightChild.leftChild = leftNode
                 self.rightChild.rightChild = rightNode.rightChild
                 return True
@@ -77,23 +91,23 @@ class Node:
                 self.key = "|"
                 leftNode = self.leftChild
                 rightNode = self.rightChild
-                self.leftChild = Node("|", self.OPERATOR)
+                self.leftChild = Node("|", OPERATOR)
 
-                self.leftChild.leftChild = Node("&", self.OPERATOR)
+                self.leftChild.leftChild = Node("&", OPERATOR)
                 self.leftChild.leftChild.leftChild = leftNode.leftChild
                 self.leftChild.leftChild.rightChild = rightNode.leftChild
 
-                self.leftChild.rightChild = Node("&", self.OPERATOR)
+                self.leftChild.rightChild = Node("&", OPERATOR)
                 self.leftChild.rightChild.leftChild = leftNode.rightChild
                 self.leftChild.rightChild.rightChild = rightNode.rightChild
 
-                self.rightChild = Node("|", self.OPERATOR)
+                self.rightChild = Node("|", OPERATOR)
 
-                self.rightChild.leftChild = Node("&", self.OPERATOR)
+                self.rightChild.leftChild = Node("&", OPERATOR)
                 self.rightChild.leftChild.leftChild = leftNode.rightChild
                 self.rightChild.leftChild.rightChild = rightNode.leftChild
 
-                self.rightChild.rightChild = Node("&", self.OPERATOR)
+                self.rightChild.rightChild = Node("&", OPERATOR)
                 self.rightChild.rightChild.leftChild = leftNode.leftChild
                 self.rightChild.rightChild.rightChild = rightNode.rightChild
                 return True
@@ -150,11 +164,11 @@ class Tree:
         if self.verbose:
             print("new Node")
         if self.atom:
-            newNode = Node(self.atom, Node.LEAF)
+            newNode = Node(self.atom, LEAF)
             self.NodeStack.append(newNode)
             self.atom = None
         elif ( len(self.OpStack) > 0 and len(self.NodeStack) > 1):
-            newNode = Node(self.OpStack.pop(),Node.OPERATOR)
+            newNode = Node(self.OpStack.pop(), OPERATOR)
             newNode.rightChild = self.NodeStack.pop()
             newNode.leftChild = self.NodeStack.pop()
             self.NodeStack.append(newNode)
@@ -177,6 +191,11 @@ class Tree:
         if self.NodeStack != []:
             while ( self.NodeStack[0].liftOr() ):
                 pass
+
+    def eval(self, keys):
+        """Evaluate the Tree with the keys"""
+        if self.NodeStack != []:
+            return self.NodeStack[0].eval(keys)
 
     def normalize(self):
         self._lowerNot()
