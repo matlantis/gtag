@@ -16,7 +16,11 @@ def usage():
     usage:
 
     gtag add -f <files> -t <tags> - tag files with the tags specified. tags will be created
+    gtag add <file> <tag> - shortform
+
     gtag remove -f <files> -t <tags> - removes the tags from the files - if present
+    gtag remove <file> <tag> - shortform
+
     gtag tags <file> - list the tags of file
     gtag files <tagsterm> - list the files that match tagsterm
 
@@ -31,16 +35,22 @@ def parseTagsAndFiles():
     files = []
     tags = []
     mode = None
-    for arg in sys.argv[2:]:
-        if arg in ['-f', '-t']:
-            mode = arg
-            continue
+    if (len(sys.argv) < 5) and (not '-f' in sys.argv) and (not '-t' in sys.argv):
+        # shortform
+        tags = [sys.argv[3]]
+        files = [sys.argv[2]]
 
-        if mode == '-f':
-            files.append(arg)
+    else:
+        for arg in sys.argv[2:]:
+            if arg in ['-f', '-t']:
+                mode = arg
+                continue
 
-        if mode == '-t':
-            tags.append(arg)
+            if mode == '-f':
+                files.append(arg)
+
+            if mode == '-t':
+                tags.append(arg)
 
     return [tags, files]
 
@@ -78,7 +88,17 @@ def stop(server):
     p = psutil.Process(pid)
     p.terminate()  #or p.kill()
 
+def restart(server):
+    try:
+        stop(server)
+
+    except:
+        print("stopping failed - ignoring")
+
+    start()
+
 def main():
+    print(sys.argv)
     try:
         opts, args = getopt.getopt(sys.argv[1:], "hv", ["help"])
     except getopt.GetoptError as err:
@@ -111,8 +131,7 @@ def main():
     elif action == 'start':
         start()
     elif action == 'restart':
-        stop(server)
-        start()
+        restart(server)
     if action == 'add':
         add(server)
     elif action == 'remove':
