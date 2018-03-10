@@ -3,12 +3,16 @@
 # the gutentag daemon
 #import sys
 import pdb
-import ast
-import os.path
+import sqlite3
+import os
 import traceback
 import parser
 import re
 import unittest
+import signal
+from xmlrpc.server import SimpleXMLRPCServer
+
+SQLITE_FILE = os.path.join(os.getenv("HOME"), ".gtagdb.sqlite3")
 
 def checkfiles(files):
     """
@@ -93,10 +97,19 @@ class GutenTagDaemon:
         self._tags = {} # key: tag, value: list of files
         self._parser = parser.Parser()
 
-        # TODO save and load the database, better use a MySQL database
+        # set signal handler for cleanup
+        signal.signal(signal.SIGTERM, self.shutdown)
 
-    def setRPCServer(self, server):
-        self._server = server
+        # TODO save and load the database, better use a MySQL database
+        # Create server
+        self._server = SimpleXMLRPCServer(("localhost", 8000))
+        self._server.register_introspection_functions()
+        self._server.register_instance(self)
+        self._server.serve_forever()
+
+    def shutdown(self, num, stackframe):
+        print("shutting down")
+        self._server.shutdown()
 
     def __check_integrity__(self):
         """
@@ -231,16 +244,7 @@ class GutenTagDaemon:
         return os.getpid()
 
 def main():
-    from xmlrpc.server import SimpleXMLRPCServer
-    # Create server
-    server = SimpleXMLRPCServer(("localhost", 8000))
-    server.register_introspection_functions()
-
     gtagd = GutenTagDaemon()
-    gtagd.setRPCServer(server)
-
-    server.register_instance(gtagd)
-    server.serve_forever()
 
 if __name__ == "__main__":
     main()

@@ -24,11 +24,16 @@ def usage():
     gtag tags <file> - list the tags of file
     gtag files <tagsterm> - list the files that match tagsterm
 
+    gtag search <pattern> - list files with a tag that contains pattern
+
     gtag start - start the daemon
     gtag restart - restart the daemon
     gtag stop - stop the daemon
 
-    gtag dir <dir> [-t <tags>] [-e <extags>] - creates a directory <dir> with symlinks to all files tagged with all the tags <tags>, but not with <extags>
+    gtag dir <dir> <tagterm> - creates a directory <dir> with symlinks to all files that match tagterm
+
+    gtag export <tagterm> - create a zip file with all the files and a tag definition file
+    gtag import <exported_zip_file> - import previously exported files and their tags
     """)
 
 def parseTagsAndFiles():
@@ -81,7 +86,7 @@ def files(server):
         print(f)
 
 def start():
-    subprocess.Popen(["./gtagd.py"])
+    subprocess.Popen(["gtagd"])
 
 def stop(server):
     pid = server.pid()
@@ -98,7 +103,6 @@ def restart(server):
     start()
 
 def main():
-    print(sys.argv)
     try:
         opts, args = getopt.getopt(sys.argv[1:], "hv", ["help"])
     except getopt.GetoptError as err:
