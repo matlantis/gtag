@@ -151,7 +151,7 @@ class GutenTagDaemon:
         try:
             for f in files:
                 for t in tags:
-                    cur.execute("DELETE FROM gutentag_files_tags WHERE file = ? AND tag = ?", [f, t])
+                    cur.execute("DELETE FROM files_tags WHERE file = ? AND tag = ?", [f, t])
 
             self._dbcxn.commit()
 
