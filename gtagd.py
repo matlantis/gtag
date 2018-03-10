@@ -12,7 +12,7 @@ import unittest
 import signal
 from xmlrpc.server import SimpleXMLRPCServer
 
-SQLITE_FILE = os.path.join(os.getenv("HOME"), ".gtagdb.sqlite3")
+SQLITE3_FILE = os.path.join(os.getenv("HOME"), ".gtagdb.sqlite3")
 
 def checkfiles(files):
     """
@@ -93,8 +93,13 @@ def specToTree(spec):
 
 class GutenTagDaemon:
     def __init__(self):
-        self._files = {} # key: filename, value: list of tags
-        self._tags = {} # key: tag, value: list of files
+        # open sqlite3 database
+        self._dbcxn = sqlite3.connect(SQLITE3_FILE)
+        # create the table if not exists
+        cur = self._dbcxn.cursor()
+        cur.execute("CREATE TABLE IF NOT EXISTS files_tags(id INTEGER PRIMARY KEY, file TEXT, tag TEXT)")
+        self._dbcxn.commit()
+
         self._parser = parser.Parser()
 
         # set signal handler for cleanup
@@ -111,27 +116,6 @@ class GutenTagDaemon:
         print("shutting down")
         self._server.shutdown()
 
-    def __check_integrity__(self):
-        """
-        integrity means, each tag in the tagsset of a file, must contain that file in its filesset, and vice versa
-        """
-        for f in self._files:
-            for t in self._files[f]:
-                if not t in self._tags:
-                    raise Exception("tag %s not in tags list" % t)
-
-                if f not in self._tags[t]:
-                    raise Exception("filesset of %s does not contain file %s, but file's tagsset contains the tag" % (t, f))
-
-
-        for t in self._tags:
-            for f in self._tags[t]:
-                if not f in self._files:
-                    raise Exception("file %s not in files list" % f)
-
-                if t not in self._files[f]:
-                    raise Exception("tagsset of %s does not contain tag %s, but tag's filesset contains the file" % (f, t))
-
     def add(self, files, tags):
         """
         files: list of files
@@ -139,23 +123,18 @@ class GutenTagDaemon:
         adds all the tags to all the specified files (dont care for double entries)
         """
         print("tag %i files with %i tags" % (len(files), len(tags)))
+        cur = self._dbcxn.cursor()
         try:
-            checkfiles(files)
             for f in files:
-                if not f in self._files.keys():
-                    self._files[f] = set()
+                for t in tags:
+                    cur.execute('INSERT INTO files_tags(file, tag) VALUES(?, ?)', [f, t])
 
-                self._files[f].update(set(tags))
-
-            for t in tags:
-                if not t in self._tags.keys():
-                    self._tags[t] = set()
-
-                self._tags[t].update(set(files))
-
-            self.__check_integrity__()
+            self._dbcxn.commit()
 
         except:
+            if self._dbcxn:
+                self._dbcxn.rollback()
+
             traceback.print_exc()
             raise Exception("Daemon Error")
 
@@ -168,59 +147,63 @@ class GutenTagDaemon:
         removes all the tags from all the specified files (dont care for unknown tags or files)
         """
         print("untag %i files with %i tags" % (len(files), len(tags)))
+        cur = self._dbcxn.cursor()
         try:
-            checkfiles(files)
             for f in files:
-                if f in self._files.keys():
-                    self._files[f].difference_update(set(tags))
+                for t in tags:
+                    cur.execute("DELETE FROM gutentag_files_tags WHERE file = ? AND tag = ?", [f, t])
 
-            for t in tags:
-                if t in self._tags.keys():
-                    self._tags[f].difference_update(set(files))
-
-            self.__check_integrity__()
+            self._dbcxn.commit()
 
         except:
+            if self._dbcxn:
+                self._dbcxn.rollback()
+
             traceback.print_exc()
             raise Exception("Daemon Error")
 
         return True
 
     def tags(self, filename):
+        cur = self._dbcxn.cursor()
+        tags = []
         try:
-            tags = []
             if filename == "":
-                tags = list(self._tags.keys())
+                cur.execute('SELECT tag FROM files_tags')
 
-            elif filename in self._files:
-                tags = list(self._files[filename])
+            else:
+                cur.execute('SELECT tag FROM files_tags WHERE file = ?', [filename])
+
+            rows = cur.fetchall()
+            for r in rows:
+                tags.append(r[0])
 
         except:
             traceback.print_exc()
             raise Exception("Daemon Error")
 
-        return tags
+        return list(set(tags))
 
     def files(self, tagterm):
+        cur = self._dbcxn.cursor()
+        matches = []
         try:
-            matches = []
+            # get list fo files
+            files = []
+            cur.execute('SELECT file FROM files_tags')
+            rows = cur.fetchall()
+            for r in rows:
+                files.append(r[0])
+            files = set(files)
+
             if tagterm == "":
-                matches = list(self._files.keys())
+                matches = list(files)
 
             else:
-                for f in self._files:
-                    if evalTagterm(tagterm, self._files[f]):
+                for f in files:
+                    tags = self.tags(f)
+                    if evalTagterm(tagterm, tags):
                         matches.append(f)
-
-                # # create a tree
-                # self._parser.clear()
-                # tree = self._parser.parse(tagterm)
-                # print("tagterm: {}".format(tagterm))
-                # print("tree: {}".format(tree))
-                # # evaluate the tree for the tags of each file
-                # for f in self._files:
-                #     if tree.eval(self._files[f]):
-                #         matches.append(f)
 
         except:
             traceback.print_exc()
