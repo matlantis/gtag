@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import os
 import psutil
 import getopt
 import sys
@@ -40,9 +41,10 @@ def parseTagsAndFiles():
     files = []
     tags = []
     mode = None
-    if (len(sys.argv) < 5) and (not '-f' in sys.argv) and (not '-t' in sys.argv):
+    if (len(sys.argv) < 5) and (len(sys.argv) > 2) and (not '-f' in sys.argv) and (not '-t' in sys.argv):
         # shortform
-        tags = [sys.argv[3]]
+        if len(sys.argv) > 3:
+            tags = [sys.argv[3]]
         files = [sys.argv[2]]
 
     else:
@@ -61,6 +63,9 @@ def parseTagsAndFiles():
 
 def add(server):
     [tags, files] = parseTagsAndFiles()
+
+    # ensure files have absolute paths
+    files = list(os.path.abspath(f) for f in files)
     output = server.add(files, tags)
 
 def remove(server):

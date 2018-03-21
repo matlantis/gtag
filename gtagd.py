@@ -2,7 +2,6 @@
 
 # the gutentag daemon
 #import sys
-import pdb
 import sqlite3
 import os
 import traceback
@@ -26,10 +25,9 @@ def evalTagterm(tagterm, tags):
     """
     Do the tags match the tagterm?
     """
-    print("---")
-    print("tagterm: '{}'".format(tagterm))
+    # print("---")
+    # print("tagterm: '{}'".format(tagterm))
 
-    # pdb.set_trace()
     # replace all tags in tagterm with True
     for t in tags:
         tagterm = tagterm.replace(t, "True")
@@ -57,10 +55,10 @@ def evalTagterm(tagterm, tags):
     tagterm = tagterm.replace("|", " or ")
     tagterm = tagterm.replace("&", " and ")
 
-    print("quotedusedtags: {}".format(quotedusedtags))
-    print("usedtags: {}".format(usedtags))
-    print("tags: {}".format(tags))
-    print("eval: '{}'".format(tagterm))
+    # print("quotedusedtags: {}".format(quotedusedtags))
+    # print("usedtags: {}".format(usedtags))
+    # print("tags: {}".format(tags))
+    # print("eval: '{}'".format(tagterm))
 
     # hopefully the tagterm is now valid python syntax
     return eval(tagterm)
@@ -92,7 +90,7 @@ def specToTree(spec):
     pass
 
 class GutenTagDaemon:
-    def __init__(self):
+    def __init__(self, server = False):
         # open sqlite3 database
         self._dbcxn = sqlite3.connect(SQLITE3_FILE)
         # create the table if not exists
@@ -105,16 +103,17 @@ class GutenTagDaemon:
         # set signal handler for cleanup
         signal.signal(signal.SIGTERM, self.shutdown)
 
-        # TODO save and load the database, better use a MySQL database
-        # Create server
-        self._server = SimpleXMLRPCServer(("localhost", 8000))
-        self._server.register_introspection_functions()
-        self._server.register_instance(self)
-        self._server.serve_forever()
+        if server:
+            # Create server
+            self._server = SimpleXMLRPCServer(("localhost", 8000))
+            self._server.register_introspection_functions()
+            self._server.register_instance(self)
+            self._server.serve_forever()
 
     def shutdown(self, num, stackframe):
         print("shutting down")
-        self._server.shutdown()
+        if hasattr(self, _server):
+            self._server.shutdown()
 
     def add(self, files, tags):
         """
@@ -150,8 +149,12 @@ class GutenTagDaemon:
         cur = self._dbcxn.cursor()
         try:
             for f in files:
-                for t in tags:
-                    cur.execute("DELETE FROM files_tags WHERE file = ? AND tag = ?", [f, t])
+                if tags == []:
+                    cur.execute("DELETE FROM files_tags WHERE file = ?", [f])
+
+                else:
+                    for t in tags:
+                        cur.execute("DELETE FROM files_tags WHERE file = ? AND tag = ?", [f, t])
 
             self._dbcxn.commit()
 
@@ -227,7 +230,7 @@ class GutenTagDaemon:
         return os.getpid()
 
 def main():
-    gtagd = GutenTagDaemon()
+    gtagd = GutenTagDaemon(server = True)
 
 if __name__ == "__main__":
     main()
