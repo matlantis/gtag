@@ -27,6 +27,9 @@ def usage():
 
     gtag search <pattern> - list files with a tag that contains pattern
 
+    gtag mount <tagsterm>
+    gtag umount <tagsterm>
+
     gtag start - start the daemon
     gtag restart - restart the daemon
     gtag stop - stop the daemon
@@ -107,6 +110,14 @@ def restart(server):
 
     start()
 
+def umount(server):
+    tagterm = sys.argv[2]
+    server.remove_mount(tagterm)
+
+def mount(server):
+    tagterm = sys.argv[2]
+    server.add_mount(tagterm)
+
 def main():
     try:
         opts, args = getopt.getopt(sys.argv[1:], "hv", ["help"])
@@ -128,7 +139,7 @@ def main():
             assert False, "unhandled option"
 
     # check action
-    if len(sys.argv) < 2 or not sys.argv[1] in ['add', 'remove', 'tags', 'files', 'start', 'stop', 'restart']:
+    if len(sys.argv) < 2 or not sys.argv[1] in ['add', 'remove', 'tags', 'files', 'start', 'stop', 'restart', 'mount', 'umount']:
         usage()
         sys.exit()
 
@@ -149,6 +160,10 @@ def main():
         tags(server)
     elif action == 'files':
         files(server)
+    elif action == 'umount':
+        umount(server)
+    elif action == 'mount':
+        mount(server)
 
 if __name__ == "__main__":
     main()

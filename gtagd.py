@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 
 # the gutentag daemon
+import pdb
 #import sys
+import threading
 import sqlite3
 import os
 import traceback
@@ -10,6 +12,7 @@ import re
 import unittest
 import signal
 from xmlrpc.server import SimpleXMLRPCServer
+from gtagmount import GutenTagMount
 
 SQLITE3_FILE = os.path.join(os.getenv("HOME"), ".gtagdb.sqlite3")
 
@@ -89,8 +92,15 @@ def specToTree(spec):
     # TODO: see FeatureTree.py for a treeclass
     pass
 
-class GutenTagDaemon:
-    def __init__(self, server = False):
+class GutenTagDb:
+    def __init__(self):
+        self._parser = parser.Parser()
+
+    def setMount(self, mount):
+        self._mount = mount
+
+    def openDb(self):
+        """call it from within the thread to run the xmlrpc server"""
         # open sqlite3 database
         self._dbcxn = sqlite3.connect(SQLITE3_FILE)
         # create the table if not exists
@@ -98,22 +108,26 @@ class GutenTagDaemon:
         cur.execute("CREATE TABLE IF NOT EXISTS files_tags(id INTEGER PRIMARY KEY, file TEXT, tag TEXT)")
         self._dbcxn.commit()
 
-        self._parser = parser.Parser()
-
-        # set signal handler for cleanup
-        signal.signal(signal.SIGTERM, self.shutdown)
-
-        if server:
-            # Create server
-            self._server = SimpleXMLRPCServer(("localhost", 8000))
-            self._server.register_introspection_functions()
-            self._server.register_instance(self)
-            self._server.serve_forever()
-
     def shutdown(self, num, stackframe):
         print("shutting down")
         if hasattr(self, _server):
             self._server.shutdown()
+
+    def delete_mount(self, tagterm):
+        if hasattr(self, "_mount"):
+            self._mount.delete_mount(tagterm)
+
+            return True
+
+        return False
+
+    def add_mount(self, tagterm):
+        if hasattr(self, "_mount"):
+            self._mount.add_mount(tagterm)
+
+            return True
+
+        return False
 
     def add(self, files, tags):
         """
@@ -214,23 +228,34 @@ class GutenTagDaemon:
 
         return matches
 
-    def mount(self, tag_spec, mount_name):
-        pass
-
-    def unmount(self, mount_name):
-        pass
-
-    def listMounts(self):
-        pass
-
-    def getMountSpec(self, mount_name):
-        pass
-
     def pid(self):
         return os.getpid()
 
-def main():
-    gtagd = GutenTagDaemon(server = True)
+class GutenTagServerThread(threading.Thread):
+    def __init__(self, gt):
+        threading.Thread.__init__(self)
+        self._gt = gt
 
+        self._server = SimpleXMLRPCServer(("localhost", 8000))
+        self._server.register_introspection_functions()
+        self._server.register_instance(self._gt)
+
+    def run(self):
+        self._gt.openDb()
+        self._server.serve_forever()
+
+def main():
+    # need two db connections, cause they run in different threads
+    gt_mount = GutenTagDb()
+    gt_server = GutenTagDb()
+    server_thread = GutenTagServerThread(gt_server)
+    mount = GutenTagMount(gt_mount)
+
+    gt_server.setMount(mount)
+
+    server_thread.start()
+    mount.start() # this blocks, so call it at last
+
+    # signal.signal(signal.SIGTERM, self.shutdown)
 if __name__ == "__main__":
     main()
