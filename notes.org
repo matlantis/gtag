@@ -3,14 +3,25 @@ der code funktioniert soweit, wie er im hilfetext von gtag.py beschrieben ist.
 dort steht auch, was als nächstes gemacht werden muss.
 
 ** Todos
-*** TODO tagspec
+*** TODO gtag add und remove von innerhalb eines mounts (pfade anpassen)
+*** TODO konzept zum auflösen der stage entwickeln
+*** TODO fuse mount vervollständigen
+    read/write file
+    create file
+    i got bad address when trying to access a not existing mount (should be file not found)
+*** TODO datenbank: mounts in datenbank speichern und so mounter und daemon entkoppeln
+    daemon kann man dann ganz auflösen
+*** TODO datenbank: tabelle für tags und files abspalten
+*** DONE tagspec
+    CLOSED: [2018-03-23 Fr 23:46]
 - Beispiel: "Music | (!Photo & Jara)"
 - soweit ich weiß gab es da eine normalform:
   - die ! sind in den leafs
   - die | liegen höher als die &
   - in Protector/FeatureTree.py ist das mit den klassen Tree und Node implementiert
 - näxter schritt ist die auswertung eines tagspec an den tags eines files
-*** TODO gtag.py -e funktioniert nicht
+*** DONE gtag.py -e funktioniert nicht
+    CLOSED: [2018-03-23 Fr 23:46]
 *** DONE git repo einrichten
     CLOSED: [2018-03-04 So 08:59]
 *** DONE convert to python3
@@ -19,8 +30,10 @@ dort steht auch, was als nächstes gemacht werden muss.
 ** benutzung
 
 *** Entwicklungsplan
-**** TODO gtag api beschreiben
-**** TODO tag-spec-syntax implementieren in gtagd.py und list befehl ersetzen (überarbeiten)
+**** DONE gtag api beschreiben
+     CLOSED: [2018-03-23 Fr 23:46]
+**** DONE tag-spec-syntax implementieren in gtagd.py und list befehl ersetzen (überarbeiten)
+     CLOSED: [2018-03-23 Fr 23:46]
 **** TODO mount-editor auf grundlage der gtag api entwickeln
 **** TODO thunar extensions entwickeln
 *** ideen: schreibe thunar, gthumb, oder nautilus context menu einträge
