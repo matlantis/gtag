@@ -7,8 +7,6 @@ import sys
 import xmlrpc.client
 import subprocess
 
-# TODO: use argparse to parse parameters
-
 def usage():
     """
     print some usage information.

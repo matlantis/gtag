@@ -7,7 +7,7 @@ import fuse
 import os
 from os.path import basename, dirname, join
 
-GTAG_MOUNT_ROOT = os.path.join(os.getenv("HOME"), "gtag3")
+GTAG_MOUNT_ROOT = os.path.join(os.getenv("HOME"), "gtag")
 GTAG_STAGING_DIR = join(os.getenv("HOME"), ".gtag", "stage")
 
 def make_unique_name(name, onames):
@@ -256,6 +256,7 @@ class GutenTagMount(fuse.Operations):
 
     # def utimens(self, path, times=None):
     #     return os.utime(self._true_path(path), times)
+
 
     # File methods
     # ============

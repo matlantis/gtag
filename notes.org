@@ -1,17 +1,28 @@
 * GutenTag
 der code funktioniert soweit, wie er im hilfetext von gtag.py beschrieben ist.
-dort steht auch, was als nächstes gemacht werden muss.
 
 ** Todos
-*** TODO gtag add und remove von innerhalb eines mounts (pfade anpassen)
-*** TODO konzept zum auflösen der stage entwickeln
-*** TODO fuse mount vervollständigen
+*** TODO use argparse for gtag                                         :code:
+*** TODO use key=value pairs instead of tags                          :basic:
+    how to store in library
+    tagterm syntax and evaluation
+*** TODO make gtag mount return the path of the new mount           :feature:
+and give it an option to automatically cd into it
+create mount on the fly by cd'ing into it
+*** TODO translate the tagterm into a sqlite query              :performance:
+*** TODO gtag add und remove von innerhalb eines mounts             :feature:
+(pfade anpassen)
+*** TODO konzept zum auflösen der stage entwickeln                    :basic:
+*** TODO handle not-existing files and links                          :basic:
+*** TODO fuse mount vervollständigen                                  :basic:
     read/write file
     create file
     i got bad address when trying to access a not existing mount (should be file not found)
-*** TODO datenbank: mounts in datenbank speichern und so mounter und daemon entkoppeln
-    daemon kann man dann ganz auflösen
-*** TODO datenbank: tabelle für tags und files abspalten
+*** TODO datenbank: mounts in datenbank speichern                     :basic:
+und so mounter und daemon entkoppeln
+daemon kann man dann ganz auflösen
+*** DONE datenbank: tabelle für tags und files abspalten
+    CLOSED: [2018-03-24 Sa 15:21]
 *** DONE tagspec
     CLOSED: [2018-03-23 Fr 23:46]
 - Beispiel: "Music | (!Photo & Jara)"

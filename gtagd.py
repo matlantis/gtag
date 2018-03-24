@@ -105,7 +105,10 @@ class GutenTagDb:
         self._dbcxn = sqlite3.connect(SQLITE3_FILE)
         # create the table if not exists
         cur = self._dbcxn.cursor()
-        cur.execute("CREATE TABLE IF NOT EXISTS files_tags(id INTEGER PRIMARY KEY, file TEXT, tag TEXT)")
+        # cur.execute("CREATE TABLE IF NOT EXISTS files_tags(id INTEGER PRIMARY KEY, file TEXT, tag TEXT)")
+        cur.execute("CREATE TABLE IF NOT EXISTS files(id INTEGER PRIMARY KEY, path TEXT)")
+        cur.execute("CREATE TABLE IF NOT EXISTS tags(id INTEGER PRIMARY KEY, label TEXT)")
+        cur.execute("CREATE TABLE IF NOT EXISTS file_tags(id INTEGER PRIMARY KEY, file_id INTEGER, tag_id INTEGER)")
         self._dbcxn.commit()
 
     def shutdown(self, num, stackframe):
@@ -140,7 +143,25 @@ class GutenTagDb:
         try:
             for f in files:
                 for t in tags:
-                    cur.execute('INSERT INTO files_tags(file, tag) VALUES(?, ?)', [f, t])
+                    # insert tag or retrieve id from existent
+                    cur.execute('SELECT id FROM tags WHERE label = ?', [t])
+                    res = cur.fetchone()
+                    if not res:
+                        cur.execute("INSERT OR IGNORE INTO tags(label) VALUES (?)", [t])
+                        t_id = cur.lastrowid
+                    else:
+                        t_id = res[0]
+
+                    # insert file or retrieve id from existent
+                    cur.execute('SELECT id FROM files WHERE path = ?', [f])
+                    res = cur.fetchone()
+                    if not res:
+                        cur.execute("INSERT OR IGNORE INTO files(path) VALUES (?)", [f])
+                        f_id = cur.lastrowid
+                    else:
+                        f_id = res[0]
+
+                    cur.execute('INSERT INTO file_tags(file_id, tag_id) VALUES(?, ?)', [f_id, t_id])
 
             self._dbcxn.commit()
 
@@ -157,18 +178,49 @@ class GutenTagDb:
         """
         files: list of files
         tags: list of tags
-        removes all the tags from all the specified files (dont care for unknown tags or files)
+        removes all the tags from all the specified files (dont care for unknown tags or files).
+        if one of the lists is empty, the items in the other one will be completely deleted from db.
+        in the other case only the correlation are delete (from file_tags table)
         """
         print("untag %i files with %i tags" % (len(files), len(tags)))
         cur = self._dbcxn.cursor()
         try:
-            for f in files:
-                if tags == []:
-                    cur.execute("DELETE FROM files_tags WHERE file = ?", [f])
+            if f == []:
+                for t in tags:
+                    # retrieve tag id
+                    cur.execute('SELECT id FROM tags WHERE label = ?', [t])
+                    res = cur.fetchone()
+                    if not res:
+                        print("tag not registered {}, ignoring".format(t))
+                        continue
+                    t_id = res[0]
 
-                else:
-                    for t in tags:
-                        cur.execute("DELETE FROM files_tags WHERE file = ? AND tag = ?", [f, t])
+                    cur.execute("DELETE FROM file_tags WHERE tag_id = ?", [t_id])
+                    cur.execute("DELETE FROM tags WHERE id = ?", [t_id])
+
+            for f in files:
+                # retrieve file id
+                cur.execute('SELECT id FROM files WHERE path = ?', [f])
+                res = cur.fetchone()
+                if not res:
+                    print("file not registered {}, ignoring".format(f))
+                    continue
+                f_id = res[0]
+
+                if tags == []:
+                    cur.execute("DELETE FROM file_tags WHERE file_id = ?", [f_id])
+                    cur.execute("DELETE FROM files WHERE id = ?", [f_id])
+
+                for t in tags:
+                    # retrieve tag id
+                    cur.execute('SELECT id FROM tags WHERE label = ?', [t])
+                    res = cur.fetchone()
+                    if not res:
+                        print("tag not registered {}, ignoring".format(t))
+                        continue
+                    t_id = res[0]
+
+                    cur.execute("DELETE FROM file_tags WHERE file_id = ? AND tag_id = ?", [f_id, t_id])
 
             self._dbcxn.commit()
 
@@ -186,10 +238,10 @@ class GutenTagDb:
         tags = []
         try:
             if filename == "":
-                cur.execute('SELECT tag FROM files_tags')
+                cur.execute('SELECT label FROM tags')
 
             else:
-                cur.execute('SELECT tag FROM files_tags WHERE file = ?', [filename])
+                cur.execute('SELECT label FROM tags LEFT JOIN file_tags ON tags.id = file_tags.tag_id LEFT JOIN files ON file_tags.file_id = files.id WHERE path = ?', [filename])
 
             rows = cur.fetchall()
             for r in rows:
@@ -207,7 +259,7 @@ class GutenTagDb:
         try:
             # get list fo files
             files = []
-            cur.execute('SELECT file FROM files_tags')
+            cur.execute('SELECT path FROM files')
             rows = cur.fetchall()
             for r in rows:
                 files.append(r[0])
@@ -232,26 +284,26 @@ class GutenTagDb:
         return os.getpid()
 
 class GutenTagServerThread(threading.Thread):
-    def __init__(self, gt):
+    def __init__(self, gtdb):
         threading.Thread.__init__(self)
-        self._gt = gt
+        self._gtdb = gtdb
 
         self._server = SimpleXMLRPCServer(("localhost", 8000))
         self._server.register_introspection_functions()
-        self._server.register_instance(self._gt)
+        self._server.register_instance(self._gtdb)
 
     def run(self):
-        self._gt.openDb()
+        self._gtdb.openDb()
         self._server.serve_forever()
 
 def main():
     # need two db connections, cause they run in different threads
-    gt_mount = GutenTagDb()
-    gt_server = GutenTagDb()
-    server_thread = GutenTagServerThread(gt_server)
-    mount = GutenTagMount(gt_mount)
+    gtdb_mount = GutenTagDb()
+    gtdb_server = GutenTagDb()
+    server_thread = GutenTagServerThread(gtdb_server)
+    mount = GutenTagMount(gtdb_mount)
 
-    gt_server.setMount(mount)
+    gtdb_server.setMount(mount)
 
     server_thread.start()
     mount.start() # this blocks, so call it at last
