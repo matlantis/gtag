@@ -23,7 +23,7 @@ def usage():
     gtag tags <file> - list the tags of file
     gtag files <tagsterm> - list the files that match tagsterm
 
-    gtag search <pattern> - list files with a tag that contains pattern
+    gtag search <pattern> - list files with a tag that contains pattern - not implemented
 
     gtag mount <tagsterm>
     gtag umount <tagsterm>
@@ -32,10 +32,8 @@ def usage():
     gtag restart - restart the daemon
     gtag stop - stop the daemon
 
-    gtag dir <dir> <tagterm> - creates a directory <dir> with symlinks to all files that match tagterm
-
-    gtag export <tagterm> - create a zip file with all the files and a tag definition file
-    gtag import <exported_zip_file> - import previously exported files and their tags
+    gtag export <tagterm> - create a zip file with all the files and a tag definition file - not implemented
+    gtag import <exported_zip_file> - import previously exported files and their tags - not implemented
     """)
 
 def parseTagsAndFiles():
@@ -110,7 +108,7 @@ def restart(server):
 
 def umount(server):
     tagterm = sys.argv[2]
-    server.remove_mount(tagterm)
+    server.delete_mount(tagterm)
 
 def mount(server):
     tagterm = sys.argv[2]
