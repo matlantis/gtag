@@ -6,6 +6,7 @@ import pdb
 import threading
 import sqlite3
 import os
+import sys
 import traceback
 import parser
 import re
@@ -13,6 +14,7 @@ import unittest
 import signal
 from xmlrpc.server import SimpleXMLRPCServer
 from gtagmount import GutenTagMount
+import gtag_common
 
 SQLITE3_FILE = os.path.join(os.getenv("HOME"), ".gtagdb.sqlite3")
 
@@ -93,8 +95,9 @@ def specToTree(spec):
     pass
 
 class GutenTagDb:
-    def __init__(self):
+    def __init__(self, dbfile):
         self._parser = parser.Parser()
+        self._dbfile = dbfile
 
     def setMount(self, mount):
         self._mount = mount
@@ -102,7 +105,7 @@ class GutenTagDb:
     def openDb(self):
         """call it from within the thread to run the xmlrpc server"""
         # open sqlite3 database
-        self._dbcxn = sqlite3.connect(SQLITE3_FILE)
+        self._dbcxn = sqlite3.connect(self._dbfile)
         # create the table if not exists
         cur = self._dbcxn.cursor()
         # cur.execute("CREATE TABLE IF NOT EXISTS files_tags(id INTEGER PRIMARY KEY, file TEXT, tag TEXT)")
@@ -288,7 +291,7 @@ class GutenTagServerThread(threading.Thread):
         threading.Thread.__init__(self)
         self._gtdb = gtdb
 
-        self._server = SimpleXMLRPCServer(("localhost", 8000))
+        self._server = SimpleXMLRPCServer(("localhost", gtag_common.RPC_PORT))
         self._server.register_introspection_functions()
         self._server.register_instance(self._gtdb)
 
@@ -297,9 +300,16 @@ class GutenTagServerThread(threading.Thread):
         self._server.serve_forever()
 
 def main():
+    dbfile = SQLITE3_FILE
+    # check if there is an db file in the arguments list
+    if len(sys.argv) > 1:
+        dbfile = sys.argv[1]
+
+    print("Using database file: {}".format(dbfile))
+
     # need two db connections, cause they run in different threads
-    gtdb_mount = GutenTagDb()
-    gtdb_server = GutenTagDb()
+    gtdb_mount = GutenTagDb(dbfile)
+    gtdb_server = GutenTagDb(dbfile)
     server_thread = GutenTagServerThread(gtdb_server)
     mount = GutenTagMount(gtdb_mount)
 

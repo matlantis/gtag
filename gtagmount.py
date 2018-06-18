@@ -7,7 +7,8 @@ import fuse
 import os
 from os.path import basename, dirname, join
 
-GTAG_MOUNT_ROOT = os.path.join(os.getenv("HOME"), "gtag")
+import gtag_common
+
 GTAG_STAGING_DIR = join(os.getenv("HOME"), ".gtag", "stage")
 
 def make_unique_name(name, onames):
@@ -72,12 +73,12 @@ class GutenTagMount(fuse.Operations):
         self._mounts = []
 
         os.makedirs(GTAG_STAGING_DIR, exist_ok = True)
-        os.makedirs(GTAG_MOUNT_ROOT, exist_ok = True)
+        os.makedirs(gtag_common.GTAG_MOUNT_ROOT, exist_ok = True)
 
         self._lock_mounts = threading.Lock()
 
     def start(self):
-        fuse.FUSE(self, GTAG_MOUNT_ROOT, nothreads=True, foreground=True)
+        fuse.FUSE(self, gtag_common.GTAG_MOUNT_ROOT, nothreads=True, foreground=True)
 
     # Private methods
     # ===============

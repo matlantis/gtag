@@ -2,10 +2,13 @@
 
 import os
 import psutil
+import time
 import getopt
 import sys
 import xmlrpc.client
 import subprocess
+
+import gtag_common
 
 def usage():
     """
@@ -28,9 +31,9 @@ def usage():
     gtag mount <tagsterm>
     gtag umount <tagsterm>
 
-    gtag start - start the daemon
+    gtag start [dbfile] - start the daemon
     gtag restart - restart the daemon
-    gtag stop - stop the daemon
+    gtag stop - stop the daemon - doesn't work (leaves the xmlrpc port open)
 
     gtag export <tagterm> - create a zip file with all the files and a tag definition file - not implemented
     gtag import <exported_zip_file> - import previously exported files and their tags - not implemented
@@ -89,13 +92,33 @@ def files(server):
     for f in files:
         print(f)
 
-def start():
-    subprocess.Popen(["gtagd"])
+def start(dbfile = None):
+    command = ["gtagd"]
+    if dbfile:
+        command.append(dbfile)
+    p = subprocess.Popen(command)
+
+    time.sleep(1)
+    ret = p.poll()
+    if ret:
+        print("Could not start daemon")
+        sys.exit(1)
 
 def stop(server):
     pid = server.pid()
     p = psutil.Process(pid)
+    print("Shutting down process with pid: {}".format(pid))
     p.terminate()  #or p.kill()
+    time.sleep(1)
+    p.terminate()  #or p.kill()
+    p.wait(timeout=3)
+    print("done")
+
+    print("unmounting fuse mount: {}".format(gtag_common.GTAG_MOUNT_ROOT))
+    p = subprocess.run(['fusermount', '-u', gtag_common.GTAG_MOUNT_ROOT])
+    if p.returncode:
+        print("failed. Maybe its already unmounted")
+    print("done")
 
 def restart(server):
     try:
@@ -140,12 +163,15 @@ def main():
         sys.exit()
 
     action = sys.argv[1]
-    server = xmlrpc.client.ServerProxy('http://localhost:8000')
+    server = xmlrpc.client.ServerProxy('http://localhost:' + str(gtag_common.RPC_PORT))
 
     if action == 'stop':
         stop(server)
     elif action == 'start':
-        start()
+        dbfile = None
+        if len(sys.argv) > 2:
+            dbfile = sys.argv[2]
+        start(dbfile)
     elif action == 'restart':
         restart(server)
     if action == 'add':
