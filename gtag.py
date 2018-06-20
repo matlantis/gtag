@@ -32,7 +32,7 @@ def usage():
     gtag umount <tagsterm>
 
     gtag start [dbfile] - start the daemon
-    gtag restart - restart the daemon
+    gtag restart - restart the daemon - ignores the dbfile at the moment TODO
     gtag stop - stop the daemon - doesn't work (leaves the xmlrpc port open)
 
     gtag export <tagterm> - create a zip file with all the files and a tag definition file - not implemented

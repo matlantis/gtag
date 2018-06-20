@@ -188,7 +188,7 @@ class GutenTagDb:
         print("untag %i files with %i tags" % (len(files), len(tags)))
         cur = self._dbcxn.cursor()
         try:
-            if f == []:
+            if files == []:
                 for t in tags:
                     # retrieve tag id
                     cur.execute('SELECT id FROM tags WHERE label = ?', [t])
@@ -319,5 +319,6 @@ def main():
     mount.start() # this blocks, so call it at last
 
     # signal.signal(signal.SIGTERM, self.shutdown)
+
 if __name__ == "__main__":
     main()

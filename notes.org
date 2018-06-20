@@ -2,7 +2,7 @@
 der code funktioniert soweit, wie er im hilfetext von gtag.py beschrieben ist.
 
 ** Todos
-*** TODO write a tester for file operations on the fuse mount         :basic:
+*** TODO write a tester for file operations on the fuse mount          :code:
 *** TODO write tester for the gtag commands                            :code:
 *** TODO use argparse for gtag                                         :code:
 *** TODO use key=value pairs instead of tags                          :basic:
