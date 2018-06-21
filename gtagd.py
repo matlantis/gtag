@@ -145,6 +145,15 @@ class GutenTagDb:
         cur = self._dbcxn.cursor()
         try:
             for f in files:
+                # insert file or retrieve id from existent
+                cur.execute('SELECT id FROM files WHERE path = ?', [f])
+                res = cur.fetchone()
+                if not res:
+                    cur.execute("INSERT OR IGNORE INTO files(path) VALUES (?)", [f])
+                    f_id = cur.lastrowid
+                else:
+                    f_id = res[0]
+
                 for t in tags:
                     # insert tag or retrieve id from existent
                     cur.execute('SELECT id FROM tags WHERE label = ?', [t])
@@ -154,15 +163,6 @@ class GutenTagDb:
                         t_id = cur.lastrowid
                     else:
                         t_id = res[0]
-
-                    # insert file or retrieve id from existent
-                    cur.execute('SELECT id FROM files WHERE path = ?', [f])
-                    res = cur.fetchone()
-                    if not res:
-                        cur.execute("INSERT OR IGNORE INTO files(path) VALUES (?)", [f])
-                        f_id = cur.lastrowid
-                    else:
-                        f_id = res[0]
 
                     cur.execute('INSERT INTO file_tags(file_id, tag_id) VALUES(?, ?)', [f_id, t_id])
 

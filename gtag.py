@@ -17,16 +17,16 @@ def usage():
     print("""This is GutenTag
     usage:
 
-    gtag add -f <files> -t <tags> - tag files with the tags specified. tags will be created
-    gtag add <file> <tag> - shortform
+    gtag add -f <files> [-t <tags>] - tag files with the tags specified. tags will be created
+    gtag add <file> [<tag>] - shortform
 
-    gtag remove -f <files> -t <tags> - removes the tags from the files - if present
-    gtag remove <file> <tag> - shortform
+    gtag remove -f <files> [-t <tags>] - removes the tags from the files - if present. behavior is dangerous: ensure that a file will be completely deleted only if -t is not given and not <tags> is empty. same for tags instead of files!!!!
+    gtag remove <file> [<tag>] - shortform
 
-    gtag tags <file> - list the tags of file
-    gtag files <tagsterm> - list the files that match tagsterm
+    gtag tags [<file>] - list the tags of file
+    gtag files [<tagsterm>] - list the files that match tagsterm
 
-    gtag search <pattern> - list files with a tag that contains pattern - not implemented
+    gtag search <pattern> - list files with a tag that matches pattern - not implemented
 
     gtag mount <tagsterm>
     gtag umount <tagsterm>
@@ -80,7 +80,7 @@ def tags(server):
         filename = sys.argv[2]
     tags = server.tags(filename)
 
-    for t in tags:
+    for t in sorted(tags):
         print(str(t))
 
 def files(server):
@@ -89,7 +89,7 @@ def files(server):
         tagterm = sys.argv[2]
     files = server.files(tagterm)
 
-    for f in files:
+    for f in sorted(files):
         print(f)
 
 def start(dbfile = None):
