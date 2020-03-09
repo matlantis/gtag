@@ -20,7 +20,7 @@ def usage():
     gtag add -f <files> [-t <tags>] - tag files with the tags specified. tags will be created
     gtag add <file> [<tag>] - shortform
 
-    gtag remove -f <files> [-t <tags>] - removes the tags from the files - if present. behavior is dangerous: ensure that a file will be completely deleted only if -t is not given and not <tags> is empty. same for tags instead of files!!!!
+    gtag remove -f <files> [-t <tags>] - removes the tags from the files - if present. behavior is dangerous: ensure that a file will be completely deleted only if -t is not given and not <tags> is empty. same for tags instead of files!!!! TODO
     gtag remove <file> [<tag>] - shortform
 
     gtag tags [<file>] - list the tags of file
