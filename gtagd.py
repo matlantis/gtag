@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 
 # the gutentag daemon
-import pdb
-#import sys
 import threading
 import sqlite3
 import os
@@ -11,7 +9,6 @@ import traceback
 import parser
 import re
 import unittest
-import signal
 from xmlrpc.server import SimpleXMLRPCServer
 from gtagmount import GutenTagMount
 import gtag_common
@@ -116,7 +113,7 @@ class GutenTagDb:
 
     def shutdown(self, num, stackframe):
         print("shutting down")
-        if hasattr(self, _server):
+        if hasattr(self, self._server):
             self._server.shutdown()
 
     def delete_mount(self, tagterm):
